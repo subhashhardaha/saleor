@@ -274,7 +274,7 @@ def test_checkout_complete_with_unavailable_variant(
 
     content = get_graphql_content(response)
     errors = content["data"]["checkoutComplete"]["checkoutErrors"]
-    assert errors[0]["code"] == CheckoutErrorCode.UNAVAILABLE_VARIANT_IN_CHANNEL.name
+    assert errors[0]["code"] == CheckoutErrorCode.NOT_AVAILABLE_IN_CHANNEL.name
     assert errors[0]["field"] == "lines"
     assert errors[0]["variants"] == [variant_id]
 

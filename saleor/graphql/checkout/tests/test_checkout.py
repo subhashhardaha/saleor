@@ -242,7 +242,7 @@ def test_checkout_create_with_unavailable_variant(
     error = get_graphql_content(response)["data"]["checkoutCreate"]["checkoutErrors"][0]
 
     assert error["field"] == "lines"
-    assert error["code"] == CheckoutErrorCode.UNAVAILABLE_VARIANT_IN_CHANNEL.name
+    assert error["code"] == CheckoutErrorCode.NOT_AVAILABLE_IN_CHANNEL.name
     assert error["variants"] == [variant_id]
 
 
@@ -1512,7 +1512,7 @@ def test_checkout_lines_add_with_unavailable_variant(
     response = user_api_client.post_graphql(MUTATION_CHECKOUT_LINES_ADD, variables)
     content = get_graphql_content(response)
     errors = content["data"]["checkoutLinesAdd"]["checkoutErrors"]
-    assert errors[0]["code"] == CheckoutErrorCode.UNAVAILABLE_VARIANT_IN_CHANNEL.name
+    assert errors[0]["code"] == CheckoutErrorCode.NOT_AVAILABLE_IN_CHANNEL.name
     assert errors[0]["field"] == "lines"
     assert errors[0]["variants"] == [variant_id]
 
@@ -1814,7 +1814,7 @@ def test_checkout_lines_update_with_unavailable_variant(
     content = get_graphql_content(response)
 
     errors = content["data"]["checkoutLinesUpdate"]["checkoutErrors"]
-    assert errors[0]["code"] == CheckoutErrorCode.UNAVAILABLE_VARIANT_IN_CHANNEL.name
+    assert errors[0]["code"] == CheckoutErrorCode.NOT_AVAILABLE_IN_CHANNEL.name
     assert errors[0]["field"] == "lines"
     assert errors[0]["variants"] == [variant_id]
 

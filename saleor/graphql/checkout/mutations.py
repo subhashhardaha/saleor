@@ -1,9 +1,11 @@
+import datetime
 from typing import TYPE_CHECKING, Iterable, List, Optional, Tuple
 
 import graphene
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction
+from django.db.models import Q
 
 from ...channel.exceptions import ChannelNotDefined
 from ...channel.models import Channel
@@ -35,6 +37,7 @@ from ...core.exceptions import InsufficientStock, PermissionDenied, ProductNotPu
 from ...core.transactions import transaction_with_commit_on_errors
 from ...order import models as order_models
 from ...product import models as product_models
+from ...product.models import ProductChannelListing
 from ...shipping import models as shipping_models
 from ...warehouse.availability import check_stock_quantity_bulk
 from ..account.i18n import I18nMixin
@@ -146,18 +149,18 @@ def check_lines_quantity(variants, quantities, country, channel_slug):
         raise ValidationError({"quantity": errors})
 
 
-def validate_variants_available_for_purchase(variants, channel_id):
-    not_available_variants = []
-    for variant in variants:
-        product_channel_listing = variant.product.channel_listings.filter(
-            channel_id=channel_id
-        ).first()
-        if not (
-            product_channel_listing
-            and product_channel_listing.is_available_for_purchase()
-        ):
-            not_available_variants.append(variant.pk)
-
+def validate_variants_available_for_purchase(variants_id: set, channel_id: str):
+    today = datetime.date.today()
+    is_available_for_purchase = Q(
+        available_for_purchase__isnull=False,
+        available_for_purchase__lte=today,
+        product__variants__id__in=variants_id,
+        channel_id=channel_id,
+    )
+    available_variants = ProductChannelListing.objects.filter(
+        Q(is_available_for_purchase)
+    ).values_list("product__variants__id", flat=True)
+    not_available_variants = variants_id.difference(set(available_variants))
     if not_available_variants:
         variant_ids = [
             graphene.Node.to_global_id("ProductVariant", pk)
@@ -167,7 +170,7 @@ def validate_variants_available_for_purchase(variants, channel_id):
             {
                 "lines": ValidationError(
                     "Cannot add lines for unavailable for purchase variants.",
-                    code=CheckoutErrorCode.PRODUCT_UNAVAILABLE_FOR_PURCHASE,
+                    code=CheckoutErrorCode.PRODUCT_UNAVAILABLE_FOR_PURCHASE.value,
                     params={"variants": variant_ids},
                 )
             }
@@ -242,8 +245,8 @@ class CheckoutCreate(ModelMutation, I18nMixin):
         )
 
         quantities = [line["quantity"] for line in lines]
-        validate_variants_available_for_purchase(variants, channel.id)
         variant_db_ids = {variant.id for variant in variants}
+        validate_variants_available_for_purchase(variant_db_ids, channel.id)
         validate_variants_available_in_channel(
             variant_db_ids, channel.id, CheckoutErrorCode
         )
@@ -450,8 +453,8 @@ class CheckoutLinesAdd(BaseMutation):
         check_lines_quantity(
             variants, quantities, checkout.get_country(), checkout_info.channel.slug
         )
-        validate_variants_available_for_purchase(variants, checkout.channel_id)
         variants_db_ids = {variant.id for variant in variants}
+        validate_variants_available_for_purchase(variants_db_ids, checkout.channel_id)
         validate_variants_available_in_channel(
             variants_db_ids, checkout.channel_id, CheckoutErrorCode
         )

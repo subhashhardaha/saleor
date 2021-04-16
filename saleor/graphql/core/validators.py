@@ -67,7 +67,7 @@ def validate_variants_available_in_channel(
             {
                 "lines": ValidationError(
                     "Cannot add lines with unavailable variants.",
-                    code=error_class.UNAVAILABLE_VARIANT_IN_CHANNEL.value,
+                    code=error_class.NOT_AVAILABLE_IN_CHANNEL,
                     params={"variants": not_available_variants_ids},
                 )
             }
