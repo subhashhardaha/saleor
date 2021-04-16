@@ -137,9 +137,6 @@ FULL_USER_QUERY = """
             avatar {
                 url
             }
-            permissions {
-                code
-            }
             userPermissions {
                 code
                 sourcePermissionGroups(userId: $id) {
@@ -418,12 +415,6 @@ def test_query_staff_user(
         source_groups = {group.name for group in perm.group_set.filter(user=staff_user)}
         expected_data = {"code": perm.codename, "groups": source_groups}
         assert expected_data in formated_user_permissions_result
-
-    # deprecated, to remove in #5389
-    assert len(data["permissions"]) == 4
-    assert {perm["code"].lower() for perm in data["permissions"]} == set(
-        all_permissions.values_list("codename", flat=True)
-    )
 
 
 def test_query_staff_user_with_order_and_without_manage_orders_perm(
@@ -1856,9 +1847,6 @@ STAFF_CREATE_MUTATION = """
                 userPermissions {
                     code
                 }
-                permissions {
-                    code
-                }
                 permissionGroups {
                     name
                     permissions {
@@ -1912,10 +1900,6 @@ def test_staff_create(
         permission_manage_users.codename,
     }
     permissions = data["user"]["userPermissions"]
-    assert {perm["code"].lower() for perm in permissions} == expected_perms
-
-    # deprecated, to remove in #5389
-    permissions = data["user"]["permissions"]
     assert {perm["code"].lower() for perm in permissions} == expected_perms
 
     staff_user = User.objects.get(email=email)
@@ -2031,10 +2015,6 @@ def test_staff_create_out_of_scope_group(
         permission_manage_users.codename,
     }
     permissions = data["user"]["userPermissions"]
-    assert {perm["code"].lower() for perm in permissions} == expected_perms
-
-    # deprecated, to remove in #5389
-    permissions = data["user"]["permissions"]
     assert {perm["code"].lower() for perm in permissions} == expected_perms
 
     staff_user = User.objects.get(email=email)
@@ -2182,9 +2162,6 @@ STAFF_UPDATE_MUTATIONS = """
                 userPermissions {
                     code
                 }
-                permissions {
-                    code
-                }
                 permissionGroups {
                     name
                 }
@@ -2210,8 +2187,6 @@ def test_staff_update(staff_api_client, permission_manage_staff, media_root):
     assert data["staffErrors"] == []
     assert data["user"]["userPermissions"] == []
     assert not data["user"]["isActive"]
-    # deprecated, to remove in #5389
-    assert data["user"]["permissions"] == []
 
 
 def test_staff_update_app_no_permission(
@@ -2275,10 +2250,6 @@ def test_staff_update_groups_and_permissions(
     assert {group["name"] for group in data["user"]["permissionGroups"]} == {
         group2.name,
         group3.name,
-    }
-    # deprecated, to remove in #5389
-    assert {perm["code"].lower() for perm in data["user"]["permissions"]} == {
-        permission_manage_orders.codename,
     }
 
 

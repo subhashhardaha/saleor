@@ -497,11 +497,6 @@ class Product(ChannelContextTypeWithMetadata, CountableDjangoObjectType):
             "Will be removed in Saleor 4.0. Use the `description` field instead."
         ),
     )
-    url = graphene.String(
-        description="The storefront URL for the product.",
-        required=True,
-        deprecation_reason="This field will be removed after 2020-07-31.",
-    )
     thumbnail = graphene.Field(
         Image,
         description="The main thumbnail for a product.",
@@ -906,6 +901,7 @@ class ProductType(CountableDjangoObjectType):
         ),
         description="List of products of this type.",
         deprecation_reason=(
+            "Will be removed in Saleor 4.0. "
             "Use the top-level `products` query with the `productTypes` filter."
         ),
     )
@@ -1094,10 +1090,6 @@ class Category(CountableDjangoObjectType):
             description="Slug of a channel for which the data should be returned."
         ),
         description="List of products in the category.",
-    )
-    url = graphene.String(
-        description="The storefront's URL for the category.",
-        deprecation_reason="This field will be removed after 2020-07-31.",
     )
     children = PrefetchingConnectionField(
         lambda: Category, description="List of children of the category."
